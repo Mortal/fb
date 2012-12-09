@@ -48,6 +48,8 @@ if __name__ == "__main__":
     friends = get_fb('GET', token, 'me/friends')
     friends = friends['data']
     print('graph {')
+    print('outputorder=edgesfirst;')
+    print('node [style=filled];')
     for f in friends:
         print('"'+f['id']+'" [label="'+f['name']+'"];')
     print()
