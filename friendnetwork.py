@@ -26,7 +26,12 @@ def get_fb(method, token, relative_url, data={}):
         print('//',res.read())
         sys.exit()
 
-    return json.loads(res.read().decode('utf-8'))
+    jdata = res.read().decode('utf-8')
+    res = json.loads(jdata)
+    if None in res:
+        print("Could not decode:")
+        print(jdata)
+    return res
 
 def get_fb_batch(token, reqs):
     j = [{"method": "GET", "relative_url": url} for url in reqs]
@@ -35,6 +40,9 @@ def get_fb_batch(token, reqs):
         j = j[50:]
         res = get_fb('POST', token, '', {"batch": batch})
         def reduce_response(res):
+            if res is None:
+                print('// Response is None')
+                sys.exit()
             print('//',res['code'], '(batch)')
             if res['code'] != 200:
                 print('//',res['body'])
@@ -45,26 +53,26 @@ def get_fb_batch(token, reqs):
 
 if __name__ == "__main__":
     token = sys.argv[1]
-    friends = get_fb('GET', token, 'me/friends')
+    label = sys.argv[2]
+    labels = ['id', 'first_name', 'name', 'middle_name', 'last_name']
+    if not label in labels:
+        print("// Warning: Label '"+label+"' not in suggested label set "+' '.join(labels))
+    friends = get_fb('GET', token, 'me/friends', {'fields':label})
     friends = friends['data']
     print('graph {')
     print('outputorder=edgesfirst;')
     print('node [style=filled];')
     for f in friends:
-        print('"'+f['id']+'" [label="'+f['name']+'"];')
+        print('"'+f['id']+'" [label="'+f[label]+'"];')
     print()
-    reqs = ['me/mutualfriends?user='+f['id'] for f in friends]
+    reqs = [f['id']+'?fields=mutualfriends.user('+f['id']+')' for f in friends]
     regex = re.compile(r'user=(\d+)')
     for res in get_fb_batch(token, reqs):
-        mutuals = res['data']
-        if not 'paging' in res:
-            print("// No paging data")
+        user = res['id']
+        if not 'mutualfriends' in res:
+            print("// Response for id "+user+" has no mutualfriends")
             continue
-        o = regex.search(res['paging']['next'])
-        if not o:
-            print("// Couldn't get user")
-            sys.exit()
-        user = o.group(1)
+        mutuals = res['mutualfriends']['data']
         for mutual in mutuals:
             if user < mutual['id']:
                 print('"'+user+'" -- "'+mutual['id']+'";')
