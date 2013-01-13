@@ -55,15 +55,25 @@ if __name__ == "__main__":
     token = sys.argv[1]
     label = sys.argv[2]
     labels = ['id', 'first_name', 'name', 'middle_name', 'last_name']
+    clique = False
+    names = {}
+    if label == 'clique':
+        clique = True
+        label = 'first_name'
     if not label in labels:
         print("// Warning: Label '"+label+"' not in suggested label set "+' '.join(labels))
     friends = get_fb('GET', token, 'me/friends', {'fields':label})
     friends = friends['data']
-    print('graph {')
-    print('outputorder=edgesfirst;')
-    print('node [style=filled];')
-    for f in friends:
-        print('"'+f['id']+'" [label="'+f[label]+'"];')
+    if clique:
+        for f in friends:
+            names[f['id']] = re.sub(r' ', '', f[label])+f['id'][-3:]
+            print(names[f['id']])
+    else:
+        print('graph {')
+        print('outputorder=edgesfirst;')
+        print('node [style=filled];')
+        for f in friends:
+            print('"'+f['id']+'" [label="'+f[label]+'"];')
     print()
     reqs = [f['id']+'?fields=mutualfriends.user('+f['id']+')' for f in friends]
     regex = re.compile(r'user=(\d+)')
@@ -75,5 +85,9 @@ if __name__ == "__main__":
         mutuals = res['mutualfriends']['data']
         for mutual in mutuals:
             if user < mutual['id']:
-                print('"'+user+'" -- "'+mutual['id']+'";')
-    print('}')
+                if clique:
+                    print(names[user]+' '+names[mutual['id']])
+                else:
+                    print('"'+user+'" -- "'+mutual['id']+'";')
+    if not clique:
+        print('}')
