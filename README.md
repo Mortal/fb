@@ -14,3 +14,9 @@ it using the fdp tool of GraphViz:
 python3 friendnetwork.py ACCESS_TOKEN first_name > graph.dot
 fdp -Tpng -ograph.png graph.dot
 ```
+
+License
+-------
+
+If you would like to use this project in a free and open source software stack,
+let me know via a message on GitHub and I will slam on the license you need.
